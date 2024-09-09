@@ -1,0 +1,28 @@
+#Send message each time Event 4740 (locked out user) is generated on the DC
+
+$from="monitor.lockedout@domain.com"
+$to=@("servicedesk@domain.com","other@email.com")
+$Subject= "User Account locked out"
+$event=Get-WinEvent -FilterHashtable @{ProviderName= "Microsoft-Windows-Security-Auditing";id='4740'} -ea SilentlyContinue | Sort-Object timecreated -Descending | select -first 1
+$Body=$event.message
+Send-MailMessage -From $from -To $to -Subject $Subject -Body ($Body| Out-String) -SmtpServer smtp.domain.com
+
+<#
+OLD CODE
+$Event=Get-WinEvent -FilterHashtable @{ProviderName="Microsoft-Windows-Security-Auditing";id='4740'} -ea SilentlyContinue | Sort-Object timecreated -Descending | select -first 1
+#$Event=get-eventlog -log security | where {$_.eventID -eq 4740} | Sort-Object index -Descending | select -first 1
+$MailBody= $Event.message
+#$MailSubject= $env:COMPUTERNAME " - User Account locked out"
+$MailSubject= "User Account locked out"
+$SmtpClient = New-Object system.net.mail.smtpClient
+$SmtpClient.host = "smtp.domain.com"
+$MailMessage = New-Object system.net.mail.mailmessage
+$MailMessage.from = "monitor.lockedout@domain.com"
+$MailMessage.To.add("servicedesk@domain.com")
+$MailMessage.IsBodyHtml = 0
+$MailMessage.Subject = $MailSubject
+$MailMessage.Body = $MailBody
+
+$SmtpClient.Send($MailMessage)
+
+#>
